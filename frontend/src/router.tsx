@@ -4,6 +4,8 @@ import { createBrowserRouter, Navigate } from 'react-router';
 import { AuthGuard } from '@/auth/AuthGuard';
 import { CallbackPage } from '@/auth/CallbackPage';
 import { AppLayout } from '@/components/AppLayout';
+import { BookmarkDetailPage } from '@/features/bookmarks/BookmarkDetailPage';
+import { BookmarksPage } from '@/features/bookmarks/BookmarksPage';
 import { CollectionDetailPage } from '@/features/collections/CollectionDetailPage';
 import { CollectionsPage } from '@/features/collections/CollectionsPage';
 
@@ -23,6 +25,8 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="/collections" replace /> },
           { path: 'collections', element: <CollectionsPage /> },
           { path: 'collections/:id', element: <CollectionDetailPage /> },
+          { path: 'bookmarks', element: <BookmarksPage /> },
+          { path: 'bookmarks/:id', element: <BookmarkDetailPage /> },
           // Remaining feature pages land in the next commits.
           {
             path: '*',
