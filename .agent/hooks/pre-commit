@@ -11,7 +11,7 @@ check_pkg() {
   [ -d "$pkg" ] && [ -f "$pkg/package.json" ] || return 0          # package not scaffolded yet
   echo "$STAGED" | grep -q "^$pkg/" || return 0                     # no staged changes in it
   echo "pre-commit: checking $pkg"
-  (cd "$pkg" && npm run --silent lint && ./node_modules/.bin/tsc --noEmit && npm test --silent)
+  (cd "$pkg" && npm run --silent lint && npm run --silent typecheck && npm test --silent)
 }
 
 check_pkg backend
