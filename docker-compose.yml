@@ -15,5 +15,27 @@ services:
       timeout: 3s
       retries: 10
 
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/bookmarks?schema=public
+      AUTH0_ISSUER: https://dev-yg.us.auth0.com/
+      AUTH0_AUDIENCE: https://bbl-candidate-test-api
+      AUTH0_JWKS_URI: https://dev-yg.us.auth0.com/.well-known/jwks.json
+      PORT: 3001
+    ports:
+      - '3001:3001'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    # Port 3000 is load-bearing: the Auth0 callback URL is registered for it.
+    ports:
+      - '3000:80'
+    depends_on:
+      - backend
+
 volumes:
   pgdata:
