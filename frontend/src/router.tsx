@@ -8,6 +8,7 @@ import { BookmarkDetailPage } from '@/features/bookmarks/BookmarkDetailPage';
 import { BookmarksPage } from '@/features/bookmarks/BookmarksPage';
 import { CollectionDetailPage } from '@/features/collections/CollectionDetailPage';
 import { CollectionsPage } from '@/features/collections/CollectionsPage';
+import { RedeemSharePage } from '@/features/sharing/RedeemSharePage';
 
 // Data-mode router WITHOUT loaders: getAccessTokenSilently lives in React
 // context (useAuth0), so data fetching pairs with TanStack Query in
@@ -27,7 +28,8 @@ export const router = createBrowserRouter([
           { path: 'collections/:id', element: <CollectionDetailPage /> },
           { path: 'bookmarks', element: <BookmarksPage /> },
           { path: 'bookmarks/:id', element: <BookmarkDetailPage /> },
-          // Remaining feature pages land in the next commits.
+          { path: 'shared', element: <RedeemSharePage /> },
+          // /all (bonus) lands in the next commit.
           {
             path: '*',
             element: <Typography variant="h5">Page not found</Typography>,
