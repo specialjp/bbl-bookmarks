@@ -82,4 +82,30 @@ Short ADRs for every ambiguity the spec left open. **This file is authoritative 
 **Traded away:** the preview flag's ORM-level ergonomics — its API has shifted across Prisma majors and gives no control over index type or ranking. `ILIKE` rejected: not FTS, no ranking, table scans.
 **How the agent was steered:** the generated controller path never sees the raw SQL; the one raw query's explicit `"ownerId" = ${userId}` predicate is called out in CLAUDE.md-adjacent docs and pinned by a dedicated cross-user e2e (user B owns a bookmark with the exact search phrase — it must never surface for user A).
 
-<!-- ADR-007/008/009/014 land with their feature commits, per plan. -->
+## ADR-007: Cross-user access returns 404, never 403 (accepted, 2026-08-15)
+
+**Context:** spec §3 — "if user A can … even *learn of the existence of* user B's data, the app is broken." A 403 on someone else's id confirms the resource exists.
+**Decision:** one failure path: every lookup is a scoped `findFirst`/`updateMany`/`deleteMany` carrying `ownerId` (or the share-grant OR-clause on reads); zero rows → `NotFoundException`. Cross-user and nonexistent are byte-identical 404s — the e2e suites assert body equality against a ghost id.
+**Traded away:** debuggability of "it exists but isn't yours" (irrelevant — that distinction IS the leak).
+**How the agent was steered:** generated CRUD tends to `findUnique` + ForbiddenException; CLAUDE.md hard constraint 2 + the body-equality e2e make the wrong pattern fail loudly.
+
+## ADR-008: Collection delete → bookmarks become uncategorised (accepted, 2026-08-15)
+
+**Context:** PO spec says only "A user can delete a collection" — silent on the bookmarks inside it.
+**Decision:** `onDelete: SetNull` — bookmarks survive with `collectionId = null` and appear under `?uncategorised=true`. Least destructive reading; switchable in one migration. Flagged **needs PO clarification** in README.
+**Traded away:** cascade-delete's "clean slate" semantics — plausible, destructive, unconfirmed.
+**How the agent was steered:** decision fixed pre-implementation in the schema (`SetNull`), pinned by the survivor e2e test.
+
+## ADR-009: Sharing = signed-in users only, read-only, single-use invite token (accepted, 2026-08-15)
+
+**Context:** §3.3 "A user may want to share a collection with someone else" collides with "OIDC on every route" and the §3 privacy invariant. A public link means an unauthenticated route; editable shares multiply the invariant's failure modes.
+**Decision (user's call):** owner mints an unguessable token (`POST /collections/:id/shares`, shown once); the recipient must be signed in and `POST /shares/accept` binds them as the single grantee. Grantees get GET-only access to the collection + its bookmarks; revocation is soft and immediate. Read-only is **structural**: write queries are owner-scoped, so a grantee's write 404s exactly like a stranger's — there is no role check to forget.
+**Traded away:** public-link virality (violates the route rule); multi-use links (weaker audit story); editable shares (scope + invariant risk).
+**How the agent was steered:** the FE planning agent defaulted to a public `GET /shared/:token` — caught in synthesis (WORKLOG 2026-08-15) and realigned to the accept-flow before any code existed.
+
+## ADR-014: Share tokens stored raw, not hashed (accepted, 2026-08-15)
+
+**Context:** invite tokens are credentials; at-rest hashing is the production-grade posture.
+**Decision:** store raw. 32 random bytes, single-use, read-only scope, soft-revocable, local demo database — hashing buys little here and costs a lookup-by-hash indirection.
+**Traded away:** defense against DB-dump token replay. Documented as the known hardening gap to fix first in production.
+**How the agent was steered:** explicit ADR so a future "security cleanup" session upgrades it deliberately rather than ad hoc.

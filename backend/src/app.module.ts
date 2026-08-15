@@ -6,6 +6,7 @@ import { BookmarksModule } from './bookmarks/bookmarks.module';
 import { CollectionsModule } from './collections/collections.module';
 import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
+import { SharesModule } from './shares/shares.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     CollectionsModule,
     BookmarksModule,
+    SharesModule,
   ],
 })
 export class AppModule {}
