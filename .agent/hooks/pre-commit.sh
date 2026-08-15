@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Pre-commit gate: lint + typecheck + unit tests for whichever package has staged changes.
+# Install: git config core.hooksPath .agent/hooks
+# No-ops safely while a package doesn't exist yet (early scaffolding commits).
+set -euo pipefail
+
+STAGED=$(git diff --cached --name-only)
+
+check_pkg() {
+  local pkg="$1"
+  [ -d "$pkg" ] && [ -f "$pkg/package.json" ] || return 0          # package not scaffolded yet
+  echo "$STAGED" | grep -q "^$pkg/" || return 0                     # no staged changes in it
+  echo "pre-commit: checking $pkg"
+  (cd "$pkg" && npm run --silent lint && npx tsc --noEmit && npm test --silent)
+}
+
+check_pkg backend
+check_pkg frontend
+echo "pre-commit: OK"
