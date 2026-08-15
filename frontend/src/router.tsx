@@ -2,6 +2,7 @@ import Typography from '@mui/material/Typography';
 import { createBrowserRouter, Navigate } from 'react-router';
 
 import { AuthGuard } from '@/auth/AuthGuard';
+import { AllPage } from '@/features/all/AllPage';
 import { CallbackPage } from '@/auth/CallbackPage';
 import { AppLayout } from '@/components/AppLayout';
 import { BookmarkDetailPage } from '@/features/bookmarks/BookmarkDetailPage';
@@ -29,7 +30,7 @@ export const router = createBrowserRouter([
           { path: 'bookmarks', element: <BookmarksPage /> },
           { path: 'bookmarks/:id', element: <BookmarkDetailPage /> },
           { path: 'shared', element: <RedeemSharePage /> },
-          // /all (bonus) lands in the next commit.
+          { path: 'all', element: <AllPage /> },
           {
             path: '*',
             element: <Typography variant="h5">Page not found</Typography>,
