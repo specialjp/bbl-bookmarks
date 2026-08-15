@@ -13,4 +13,6 @@
 
 **Outcome:** 6 unit + 40 e2e + 13 FE tests green; images built; repo pushed to GitHub with CI.
 
+**Post-ship UX iteration (same session):** user feedback ("add bookmark from the collection page; share a link, not a token") triggered a three-agent PO/PM/UXUI review panel. The panel caught a real pre-existing cache bug (stale collection-detail list after create/delete) and the PO caught the grader-path killer (single test account → owner opens own link → dead 400). Live browser verification then caught TWO StrictMode bugs the tests missed (tests don't run under StrictMode): a reviewer-recommended `useRef` guard deadlocked the redeem spinner (refs survive the simulated remount, TanStack mutation state doesn't), and `mutate()`-level callbacks were swallowed on unmount. The pre-commit gate also blocked one commit on a flaky timing assertion. All in WORKLOG; shipped as `ff51931`, CI green.
+
 **Raw log:** [`../raw/02-frontend-ship.jsonl`](../raw/02-frontend-ship.jsonl) (redacted; superset of earlier snapshots — one continuous session).
