@@ -47,4 +47,32 @@ Short ADRs for every ambiguity the spec left open. **This file is authoritative 
 **Traded away:** the ID token's ready-made profile claims (email/name) — the API resolves profile via `/userinfo` instead (ADR-006).
 **How the agent was steered:** requirement fixed by the user up front; encoded in CLAUDE.md; the FE never reads `getIdTokenClaims()` for API calls.
 
-<!-- ADR-006..014 land with their feature commits, per plan. -->
+## ADR-006: User provisioning via /userinfo + email-keyed upsert (accepted, 2026-08-15)
+
+**Context:** with an `audience`, Auth0 issues plain access tokens carrying only `sub` — no email/profile. We have **no tenant admin access**, so custom claims (Actions) and the Management API are unavailable. Separately, seed data needs `ownerId`s, but the real test user's `sub` is unknowable until first login.
+**Decision:** on first sight of an unknown `sub`, call `GET /userinfo` with the presented bearer (scope `openid profile email` covers it), then upsert **keyed by email**: a seeded row with that email gets its placeholder `sub` replaced (same row id — all seeded data instantly belongs to the live session); otherwise create. Cache `sub → user` in-process so `/userinfo` is hit once per unknown sub per process (Auth0 rate-limits it ~5 req/min/user). Users get internal cuid PKs precisely so this relink is a one-column update.
+**Traded away:** custom-claims simplicity (blocked anyway); multi-instance cache coherence (irrelevant here).
+**How the agent was steered:** a planning agent initially reached for the Auth0 Management API; overruled in the plan — creds-only access was made an explicit constraint in every agent brief.
+
+## ADR-010: Test auth = locally-signed RS256 + mocked JWKS (accepted, 2026-08-15)
+
+**Context:** every route requires a valid Auth0 access token; tests must be hermetic and CI must hold zero Auth0 secrets.
+**Decision:** e2e tests generate an RS256 keypair (jose), serve its JWK via nock at the JWKS URL, sign tokens locally, and call `nock.disableNetConnect()` (allowing 127.0.0.1) so any accidental live Auth0 call is a hard failure. `AUTH0_JWKS_URI` is its own env var so tests repoint it without touching strategy code. This exercises the **real** jwks-rsa verification path (kid lookup, caching, issuer/audience checks).
+**Traded away:** live-integration confidence (covered by manual login flow); an HS256 test shortcut was rejected because it bypasses the exact code being proven.
+**How the agent was steered:** CLAUDE.md hard constraint 7 — "tests NEVER hit live Auth0"; the auth choice (passport-jwt + jwks-rsa over jose's `createRemoteJWKSet`) was itself made because nock can intercept Node's classic http stack but not undici fetch.
+
+## ADR-012: No /health endpoint (accepted, 2026-08-15)
+
+**Context:** "OIDC authentication on every route" vs the convention of a public liveness probe.
+**Decision:** take the requirement literally — no `@Public()` decorator exists in the codebase, so an accidentally public endpoint is unrepresentable; there is no /health. Liveness is container-level (`pg_isready` healthcheck on the db service; process supervision for the API).
+**Traded away:** HTTP-level orchestrator probes.
+**How the agent was steered:** a planning agent scaffolded /health by default (WORKLOG 2026-08-15); removed during plan synthesis and encoded as CLAUDE.md hard constraint 1.
+
+## ADR-013: AUTH0_ISSUER keeps its trailing slash (accepted, 2026-08-15)
+
+**Context:** Auth0 mints `iss: "https://<tenant>/"` — with a trailing slash. Configuring the issuer without it makes every token fail validation with an unhelpful 401 (a classic integration bug).
+**Decision:** `AUTH0_ISSUER=https://dev-yg.us.auth0.com/`, documented in .env.example; the e2e 401 matrix includes a wrong-issuer case (issuer *without* the slash) to pin the behaviour.
+**Traded away:** nothing — this is a correctness pin.
+**How the agent was steered:** encoded in .env.example comment + a dedicated e2e case so a "cleanup" that strips the slash fails loudly.
+
+<!-- ADR-007/008/009/011/014 land with their feature commits, per plan. -->
