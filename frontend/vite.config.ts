@@ -25,5 +25,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     globals: true,
+    // Hermetic: no .env dependence in CI; Auth0 is module-mocked anyway.
+    env: {
+      VITE_AUTH0_DOMAIN: 'test.auth0.local',
+      VITE_AUTH0_CLIENT_ID: 'test-client-id',
+      VITE_AUTH0_AUDIENCE: 'https://test-audience',
+      VITE_API_BASE_URL: '',
+    },
   },
 });
