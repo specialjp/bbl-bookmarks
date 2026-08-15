@@ -7,10 +7,7 @@ import {
 import { randomBytes } from 'node:crypto';
 
 import { PaginationDto } from '../common/dto/pagination.dto';
-import {
-  Paginated,
-  paginated,
-} from '../common/interfaces/paginated.interface';
+import { Paginated, paginated } from '../common/interfaces/paginated.interface';
 import { CollectionShare } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -112,8 +109,14 @@ export class SharesService {
     }
   }
 
-  private stripToken(share: CollectionShare & Record<string, unknown>): ShareView {
-    const { token: _token, collection: _c, ...view } = share as CollectionShare & {
+  private stripToken(
+    share: CollectionShare & Record<string, unknown>,
+  ): ShareView {
+    const {
+      token: _token,
+      collection: _c,
+      ...view
+    } = share as CollectionShare & {
       collection?: unknown;
     };
     return view;
