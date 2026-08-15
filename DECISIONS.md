@@ -75,4 +75,11 @@ Short ADRs for every ambiguity the spec left open. **This file is authoritative 
 **Traded away:** nothing — this is a correctness pin.
 **How the agent was steered:** encoded in .env.example comment + a dedicated e2e case so a "cleanup" that strips the slash fails loudly.
 
-<!-- ADR-007/008/009/011/014 land with their feature commits, per plan. -->
+## ADR-011: FTS via generated tsvector + GIN in a raw-SQL migration (accepted, 2026-08-15)
+
+**Context:** the full-text-search bonus needs Postgres FTS over bookmark title+notes; Prisma offers a `fullTextSearch` preview flag, and `ILIKE` was the lazy alternative.
+**Decision:** hand-edited migration adds a `GENERATED ALWAYS … STORED` tsvector column + GIN index; queries use `$queryRaw` with `websearch_to_tsquery` (tolerates arbitrary user input) and `ts_rank` ordering. The schema carries `Unsupported("tsvector")?` so `migrate dev` never drops the column.
+**Traded away:** the preview flag's ORM-level ergonomics — its API has shifted across Prisma majors and gives no control over index type or ranking. `ILIKE` rejected: not FTS, no ranking, table scans.
+**How the agent was steered:** the generated controller path never sees the raw SQL; the one raw query's explicit `"ownerId" = ${userId}` predicate is called out in CLAUDE.md-adjacent docs and pinned by a dedicated cross-user e2e (user B owns a bookmark with the exact search phrase — it must never surface for user A).
+
+<!-- ADR-007/008/009/014 land with their feature commits, per plan. -->

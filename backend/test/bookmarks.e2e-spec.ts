@@ -44,7 +44,10 @@ describe('Bookmarks (e2e)', () => {
     auth.cleanup();
   });
 
-  const mkCollection = (ownerId: string, name: string): Promise<{ id: string }> =>
+  const mkCollection = (
+    ownerId: string,
+    name: string,
+  ): Promise<{ id: string }> =>
     getTestPrisma().collection.create({ data: { name, ownerId } });
 
   const createBookmark = async (
@@ -192,7 +195,9 @@ describe('Bookmarks (e2e)', () => {
         .get(`/api/bookmarks/${id}`)
         .set('Authorization', `Bearer ${tokenA}`)
         .expect(200);
-      expect((res.body as { collectionId: string | null }).collectionId).toBeNull();
+      expect(
+        (res.body as { collectionId: string | null }).collectionId,
+      ).toBeNull();
 
       const loose = await request(server())
         .get('/api/bookmarks?uncategorised=true')
@@ -215,7 +220,7 @@ describe('Bookmarks (e2e)', () => {
       expect((res.body as { data: unknown[] }).data).toHaveLength(0);
     });
 
-    it("cross-user GET/PUT/PATCH/DELETE -> 404, body identical to nonexistent id", async () => {
+    it('cross-user GET/PUT/PATCH/DELETE -> 404, body identical to nonexistent id', async () => {
       const { id } = await createBookmark(tokenA, {
         url: 'https://a.example.com',
         title: 'A only',

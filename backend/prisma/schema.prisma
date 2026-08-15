@@ -45,6 +45,10 @@ model Bookmark {
   collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
   ownerId      String
   owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  // Generated STORED tsvector over title+notes, GIN-indexed — managed by
+  // hand-edited SQL in the bookmark_fts migration (ADR-011). Declared here so
+  // `migrate dev` never tries to drop it.
+  searchVector Unsupported("tsvector")?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 

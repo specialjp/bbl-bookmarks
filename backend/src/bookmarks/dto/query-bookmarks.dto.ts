@@ -14,6 +14,8 @@ export class QueryBookmarksDto extends PaginationDto {
   @IsBoolean()
   uncategorised?: boolean;
 
-  // ?q= (FTS, ADR-011) lands with the search commit — adding the field
-  // earlier would accept-and-ignore an undocumented param (contract drift).
+  /** full-text search over title + notes, relevance-ranked (ADR-011) */
+  @IsOptional()
+  @IsString()
+  q?: string;
 }

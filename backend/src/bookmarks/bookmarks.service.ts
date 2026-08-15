@@ -1,9 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import {
-  Paginated,
-  paginated,
-} from '../common/interfaces/paginated.interface';
+import { Paginated, paginated } from '../common/interfaces/paginated.interface';
 import { Bookmark, Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookmarkDto } from './dto/create-bookmark.dto';
@@ -21,6 +18,7 @@ export class BookmarksService {
     userId: string,
     query: QueryBookmarksDto,
   ): Promise<Paginated<Bookmark>> {
+    if (query.q) return this.search(userId, query);
     const where: Prisma.BookmarkWhereInput = {
       ownerId: userId,
       ...(query.collectionId ? { collectionId: query.collectionId } : {}),
@@ -36,6 +34,41 @@ export class BookmarksService {
       this.prisma.bookmark.count({ where }),
     ]);
     return paginated(rows, total, query.page, query.limit);
+  }
+
+  // FTS via the generated tsvector column (ADR-011). websearch_to_tsquery
+  // tolerates arbitrary user input; tagged-template interpolation is
+  // parameterized (no injection). THE LOAD-BEARING LINE is the explicit
+  // "ownerId" predicate — Prisma's implicit scoping does not apply to raw
+  // SQL, and spec §3 dies without it. Pinned by a dedicated cross-user e2e.
+  private async search(
+    userId: string,
+    query: QueryBookmarksDto,
+  ): Promise<Paginated<Bookmark>> {
+    const q = query.q as string;
+    const collectionFilter = query.uncategorised
+      ? Prisma.sql`AND "collectionId" IS NULL`
+      : query.collectionId
+        ? Prisma.sql`AND "collectionId" = ${query.collectionId}`
+        : Prisma.empty;
+
+    const rows = await this.prisma.$queryRaw<
+      (Bookmark & { rank: number; total: number })[]
+    >`
+      SELECT "id", "url", "title", "notes", "collectionId", "ownerId",
+             "createdAt", "updatedAt",
+             ts_rank("searchVector", websearch_to_tsquery('english', ${q})) AS rank,
+             count(*) OVER()::int AS total
+      FROM "Bookmark"
+      WHERE "ownerId" = ${userId}
+        AND "searchVector" @@ websearch_to_tsquery('english', ${q})
+        ${collectionFilter}
+      ORDER BY rank DESC, "createdAt" DESC
+      LIMIT ${query.limit} OFFSET ${query.skip}`;
+
+    const total = rows[0]?.total ?? 0;
+    const data = rows.map(({ rank: _rank, total: _total, ...row }) => row);
+    return paginated(data as Bookmark[], total, query.page, query.limit);
   }
 
   async getOne(userId: string, id: string): Promise<Bookmark> {
