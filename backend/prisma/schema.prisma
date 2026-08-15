@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Internal cuid PK with sub/email unique: first-login relinking of a seeded
+// user rewrites `sub` in one column while every FK stays stable (ADR-006).
+model User {
+  id             String            @id @default(cuid())
+  sub            String            @unique
+  email          String            @unique
+  name           String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  collections    Collection[]
+  bookmarks      Bookmark[]
+  sharesReceived CollectionShare[] @relation("ShareGrantee")
+}
+
+model Collection {
+  id        String            @id @default(cuid())
+  name      String
+  ownerId   String
+  owner     User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bookmarks Bookmark[]
+  shares    CollectionShare[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([ownerId])
+}
+
+model Bookmark {
+  id           String      @id @default(cuid())
+  url          String
+  title        String
+  notes        String?
+  // Nullable: an uncategorised bookmark. Deleting a collection keeps its
+  // bookmarks and uncategorises them (SetNull) — ADR-008, PO note in README.
+  collectionId String?
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  ownerId      String
+  owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([ownerId])
+  @@index([collectionId])
+}
+
+// Single-use invite: minted unclaimed (granteeUserId null), bound on accept.
+// Revocation is soft (revokedAt) so issued-share history survives (ADR-009).
+model CollectionShare {
+  id            String     @id @default(cuid())
+  collectionId  String
+  collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  token         String     @unique
+  granteeUserId String?
+  grantee       User?      @relation("ShareGrantee", fields: [granteeUserId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  revokedAt     DateTime?
+
+  @@unique([collectionId, granteeUserId])
+  @@index([granteeUserId])
+}

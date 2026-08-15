@@ -1,0 +1,15 @@
+# compiled output
+/dist
+/node_modules
+
+# generated Prisma client — recreated by `npm run prisma:generate` (postinstall)
+/src/generated
+
+# env
+.env
+!.env.example
+
+# misc
+/coverage
+*.log
+.DS_Store
