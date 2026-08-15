@@ -86,7 +86,7 @@ export function AllPage(): JSX.Element {
   return (
     <Box>
       <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
-        Everything
+        All bookmarks
       </Typography>
       <Stack spacing={2}>
         {collections.data.data.map((c: Collection) => (
@@ -104,7 +104,9 @@ export function AllPage(): JSX.Element {
                 </Typography>
                 <Chip
                   size="small"
-                  label={`${grouped.get(c.id)?.length ?? 0} bookmarks`}
+                  label={`${grouped.get(c.id)?.length ?? 0} bookmark${
+                    (grouped.get(c.id)?.length ?? 0) === 1 ? '' : 's'
+                  }`}
                 />
               </Stack>
               {renderBookmarks(grouped.get(c.id) ?? [])}
@@ -116,7 +118,12 @@ export function AllPage(): JSX.Element {
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
               <FolderOffIcon color="disabled" fontSize="small" />
               <Typography variant="h6">Uncategorised</Typography>
-              <Chip size="small" label={`${uncategorised.length} bookmarks`} />
+              <Chip
+                size="small"
+                label={`${uncategorised.length} bookmark${
+                  uncategorised.length === 1 ? '' : 's'
+                }`}
+              />
             </Stack>
             {renderBookmarks(uncategorised)}
           </CardContent>

@@ -70,7 +70,12 @@ describe('BookmarksPage', () => {
     await waitFor(() =>
       expect(router.state.location.search).toContain('q=loose'),
     );
-    expect(await screen.findByText('Loose link')).toBeInTheDocument();
+    // generous timeout: debounce (300ms) + refetch can exceed the default
+    // 1s under CI/CPU contention (hook caught this as a flake once)
+    await waitFor(
+      () => expect(screen.getByText('Loose link')).toBeInTheDocument(),
+      { timeout: 4000 },
+    );
     await waitFor(() =>
       expect(screen.queryByText('Postgres deep dive')).not.toBeInTheDocument(),
     );

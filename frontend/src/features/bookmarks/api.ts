@@ -10,6 +10,7 @@ import { ApiError } from '@/api/client';
 import { useApi } from '@/api/useApi';
 import type { Bookmark, Paginated } from '@/api/types';
 import { useSnackbar } from '@/components/SnackbarProvider';
+import { collectionKeys } from '@/features/collections/api';
 
 export interface BookmarkFilters {
   collectionId?: string;
@@ -72,6 +73,9 @@ export function useCreateBookmark(): UseMutationResult<
     mutationFn: (body) => api.post<Bookmark>('/api/bookmarks', body),
     onSuccess: (created) => {
       void qc.invalidateQueries({ queryKey: bookmarkKeys.all });
+      // The collection-detail page lists bookmarks under a collections key —
+      // without this, a bookmark added from that page never appears on it.
+      void qc.invalidateQueries({ queryKey: collectionKeys.all });
       notify(`Bookmark “${created.title}” added`);
     },
     onError: (e) => notify(e.message, 'error'),
@@ -90,6 +94,7 @@ export function useDeleteBookmark(): UseMutationResult<
     mutationFn: ({ id }) => api.del(`/api/bookmarks/${id}`),
     onSuccess: (_void, { title }) => {
       void qc.invalidateQueries({ queryKey: bookmarkKeys.all });
+      void qc.invalidateQueries({ queryKey: collectionKeys.all });
       notify(`Bookmark “${title}” deleted`);
     },
     onError: (e) => notify(e.message, 'error'),

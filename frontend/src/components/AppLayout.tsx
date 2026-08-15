@@ -14,7 +14,7 @@ const NAV = [
   { to: '/collections', label: 'Collections' },
   { to: '/bookmarks', label: 'Bookmarks' },
   { to: '/all', label: 'All' },
-  { to: '/shared', label: 'Redeem share' },
+  { to: '/shared', label: 'Add shared collection' },
 ];
 
 export function AppLayout(): JSX.Element {

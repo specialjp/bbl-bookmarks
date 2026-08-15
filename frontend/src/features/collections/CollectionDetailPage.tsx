@@ -1,4 +1,6 @@
+import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
 import ShareIcon from '@mui/icons-material/Share';
@@ -8,6 +10,7 @@ import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -18,7 +21,9 @@ import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { EmptyState } from '@/components/EmptyState';
 import { ErrorAlert } from '@/components/ErrorAlert';
+import { CreateBookmarkDialog } from '@/features/bookmarks/CreateBookmarkDialog';
 
 import {
   useCollection,
@@ -34,6 +39,7 @@ export function CollectionDetailPage(): JSX.Element {
   const bookmarks = useCollectionBookmarks(id);
   const deleteCollection = useDeleteCollection();
   const [sharing, setSharing] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   if (collection.isError) {
@@ -69,6 +75,13 @@ export function CollectionDetailPage(): JSX.Element {
         {c.isOwner && (
           <>
             <Button
+              startIcon={<AddIcon />}
+              variant="contained"
+              onClick={() => setAdding(true)}
+            >
+              Add bookmark
+            </Button>
+            <Button
               startIcon={<ShareIcon />}
               variant="outlined"
               onClick={() => setSharing(true)}
@@ -100,32 +113,64 @@ export function CollectionDetailPage(): JSX.Element {
       ) : bookmarks.isPending ? (
         <Skeleton variant="rounded" height={120} />
       ) : bookmarks.data.data.length === 0 ? (
-        <Typography color="text.secondary">
-          No bookmarks in this collection.
-        </Typography>
+        c.isOwner ? (
+          <EmptyState
+            icon={<BookmarkBorderIcon fontSize="inherit" />}
+            title="No bookmarks in this collection"
+            subtitle="Save your first link here."
+            actionLabel="Add a bookmark"
+            onAction={() => setAdding(true)}
+          />
+        ) : (
+          <Typography color="text.secondary">
+            No bookmarks in this collection.
+          </Typography>
+        )
       ) : (
         <List>
-          {bookmarks.data.data.map((b) => (
-            <ListItemButton
-              key={b.id}
-              onClick={() => c.isOwner && void navigate(`/bookmarks/${b.id}`)}
-            >
-              <ListItemIcon>
-                <LinkIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary={b.title}
-                secondary={
-                  <Link href={b.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                    {b.url}
-                  </Link>
-                }
-              />
-            </ListItemButton>
-          ))}
+          {bookmarks.data.data.map((b) => {
+            const content = (
+              <>
+                <ListItemIcon>
+                  <LinkIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={b.title}
+                  secondary={
+                    <Link
+                      href={b.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {b.url}
+                    </Link>
+                  }
+                />
+              </>
+            );
+            // Grantees get a plain row — a ripple button with a no-op click
+            // reads as broken (UX review C1).
+            return c.isOwner ? (
+              <ListItemButton
+                key={b.id}
+                onClick={() => void navigate(`/bookmarks/${b.id}`)}
+              >
+                {content}
+              </ListItemButton>
+            ) : (
+              <ListItem key={b.id}>{content}</ListItem>
+            );
+          })}
         </List>
       )}
 
+      <CreateBookmarkDialog
+        key={c.id}
+        open={adding}
+        onClose={() => setAdding(false)}
+        defaultCollectionId={c.id}
+      />
       <ShareCollectionDialog
         open={sharing}
         collectionId={c.id}

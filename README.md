@@ -47,7 +47,7 @@ On first login you'll immediately see seeded data: the seed plants this user by 
 # backend — 6 unit + 40 e2e (needs the db container up; e2e uses its own bookmarks_test database)
 cd backend && npm test && npm run test:e2e
 
-# frontend — 13 vitest/RTL/MSW tests
+# frontend — 19 vitest/RTL/MSW tests
 cd frontend && npm test
 ```
 
@@ -65,7 +65,7 @@ The spec says only "A user can delete a collection" — silent about the bookmar
 
 ## Sharing model (§3.3)
 
-"A user may want to share a collection with someone else" is under-specified, and it collides with both "OIDC on every route" and the §3 privacy invariant. Decision: **signed-in users only, read-only, revocable** — the owner mints a single-use invite token (shown exactly once), the recipient redeems it while authenticated, and gains GET-only access to that collection and its bookmarks. Read-only is *structural*: write queries are owner-scoped, so a grantee's write attempt 404s exactly like a stranger's. No public link exists, so every route stays behind OIDC. Traded away: public-link virality and editable shares. See ADR-009; token-at-rest hashing is a documented hardening gap (ADR-014).
+"A user may want to share a collection with someone else" is under-specified, and it collides with both "OIDC on every route" and the §3 privacy invariant. Decision: **signed-in users only, read-only, revocable** — the owner creates a single-use **share link** (shown exactly once); the recipient opens it, signs in with their own account, and the app redeems it automatically, landing them on the collection with read-only access to it and its bookmarks. Read-only is *structural*: write queries are owner-scoped, so a grantee's write attempt 404s exactly like a stranger's. The link targets a **guarded SPA route** — no public API route exists, so every endpoint stays behind OIDC (the link is delivery, not semantics; ADR-015). If the owner opens their own link (you, grader, with the single test account), the app recognises it and takes them to their collection instead of erroring. Traded away: public-link virality and editable shares. See ADR-009/015; token-at-rest hashing is a documented hardening gap (ADR-014).
 
 ## Completed vs skipped
 

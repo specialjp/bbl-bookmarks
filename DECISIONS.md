@@ -103,6 +103,13 @@ Short ADRs for every ambiguity the spec left open. **This file is authoritative 
 **Traded away:** public-link virality (violates the route rule); multi-use links (weaker audit story); editable shares (scope + invariant risk).
 **How the agent was steered:** the FE planning agent defaulted to a public `GET /shared/:token` — caught in synthesis (WORKLOG 2026-08-15) and realigned to the accept-flow before any code existed.
 
+## ADR-015: Share tokens delivered as links, auto-redeemed in the SPA (accepted, 2026-08-15)
+
+**Context:** user feedback after a PO/PM/UX review pass: pasting a raw token is hostile UX — people share links. But ADR-009's constraints (signed-in only, read-only, no public route) are locked.
+**Decision:** the FE wraps the same single-use token in `/shared?token=…&collection=…`. `/shared` is a **guarded SPA route** — opening the link signed-out round-trips through Auth0 (AuthGuard already preserves path+query in `appState.returnTo`) and then auto-calls the existing authenticated `POST /shares/accept`. **No API change**; this is delivery, not semantics — materially different from the public `GET /shared/:token` endpoint rejected during planning. The `collection` param exists for one case: the owner opening their own link (the grader's guaranteed path — one test account) gets the API's 400 and is routed to their own collection instead of a dead end. Threat notes: token is single-use + revocable; `Referrer-Policy` defaults strip the query cross-origin; `appState` stays client-side; the tokened URL is history-replaced after redeem; nginx access logs will record `/shared?token=…` in the Docker path (same class of gap as ADR-014, local demo).
+**Traded away:** nothing server-side; the manual paste field remains as a fallback (it also accepts a full link and extracts the token).
+**How the agent was steered:** two live corrections during this change — a reviewer-suggested `useRef` StrictMode guard deadlocked the redeem spinner (refs survive the simulated remount, TanStack mutation state does not); removed in favor of relying on the API's idempotent re-accept, which was designed for exactly this. Navigation moved from `mutate()` callbacks (swallowed on unmount) to effects on mutation state. Both in WORKLOG.
+
 ## ADR-014: Share tokens stored raw, not hashed (accepted, 2026-08-15)
 
 **Context:** invite tokens are credentials; at-rest hashing is the production-grade posture.

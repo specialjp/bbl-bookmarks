@@ -105,7 +105,8 @@ export function useMintShare(): UseMutationResult<
   return useMutation({
     mutationFn: ({ collectionId }) =>
       api.post<MintedShare>(`/api/collections/${collectionId}/shares`, {}),
-    onSuccess: () => notify('Share token created — copy it now, it is shown once'),
+    onSuccess: () =>
+      notify('Share link created — copy it now, it is shown once'),
     onError: (e) => notify(e.message, 'error'),
   });
 }

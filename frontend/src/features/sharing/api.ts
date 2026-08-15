@@ -20,14 +20,23 @@ export function useAcceptShare(): UseMutationResult<Share, ApiError, { token: st
     mutationFn: ({ token }) => api.post<Share>('/api/shares/accept', { token }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: collectionKeys.all });
-      notify('Share accepted — the collection is now in “Shared with me”');
+      notify('Collection added — you have read-only access');
     },
+    // Every mutation notifies (CLAUDE.md #9); the redeem page ALSO renders a
+    // persistent inline alert — the snackbar times out, the alert survives.
     onError: (e) =>
-      notify(
-        e.status === 404
-          ? 'That token is not valid (unknown or revoked)'
-          : e.message,
-        'error',
-      ),
+      e.status === 400
+        ? notify(
+            'This is your own share link — send it to someone else',
+            'info',
+          )
+        : notify(
+            e.status === 404
+              ? 'That share link is not valid (unknown or revoked)'
+              : e.status === 409
+                ? 'That share link was already used by someone else'
+                : e.message,
+            'error',
+          ),
   });
 }

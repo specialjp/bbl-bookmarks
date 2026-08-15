@@ -12,22 +12,26 @@ import IconButton from '@mui/material/IconButton';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useState, type JSX } from 'react';
+import { useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 
 import type { Collection } from '@/api/types';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorAlert } from '@/components/ErrorAlert';
+import { useBookmarks } from '@/features/bookmarks/api';
 
 import { useCollections, useDeleteCollection, useSharedWithMe } from './api';
 import { CreateCollectionDialog } from './CreateCollectionDialog';
 
 function CollectionCard({
   collection,
+  count,
   onDelete,
 }: {
   collection: Collection;
+  /** own collections only — useBookmarks returns only the caller's rows */
+  count?: number;
   onDelete?: (c: Collection) => void;
 }): JSX.Element {
   const navigate = useNavigate();
@@ -44,6 +48,13 @@ function CollectionCard({
           <Typography variant="caption" color="text.secondary">
             Created {new Date(collection.createdAt).toLocaleDateString()}
           </Typography>
+          {count !== undefined && (
+            <Chip
+              size="small"
+              sx={{ ml: 1 }}
+              label={`${count} bookmark${count === 1 ? '' : 's'}`}
+            />
+          )}
           {!collection.isOwner && (
             <Chip size="small" label="read-only" sx={{ ml: 1 }} />
           )}
@@ -67,9 +78,20 @@ function CollectionCard({
 export function CollectionsPage(): JSX.Element {
   const own = useCollections();
   const shared = useSharedWithMe();
+  const bookmarks = useBookmarks({});
   const deleteCollection = useDeleteCollection();
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState<Collection | null>(null);
+
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const b of bookmarks.data?.data ?? []) {
+      if (b.collectionId) {
+        map.set(b.collectionId, (map.get(b.collectionId) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [bookmarks.data]);
 
   if (own.isError) return <ErrorAlert error={own.error} onRetry={() => void own.refetch()} />;
 
@@ -101,7 +123,12 @@ export function CollectionsPage(): JSX.Element {
       ) : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {own.data.data.map((c) => (
-            <CollectionCard key={c.id} collection={c} onDelete={setToDelete} />
+            <CollectionCard
+              key={c.id}
+              collection={c}
+              count={counts.get(c.id) ?? 0}
+              onDelete={setToDelete}
+            />
           ))}
         </Box>
       )}

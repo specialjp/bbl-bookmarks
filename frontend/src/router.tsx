@@ -1,15 +1,29 @@
-import Typography from '@mui/material/Typography';
-import { createBrowserRouter, Navigate } from 'react-router';
+import SearchOffIcon from '@mui/icons-material/SearchOff';
+import type { JSX } from 'react';
+import { createBrowserRouter, Navigate, useNavigate } from 'react-router';
 
-import { AuthGuard } from '@/auth/AuthGuard';
-import { AllPage } from '@/features/all/AllPage';
 import { CallbackPage } from '@/auth/CallbackPage';
+import { AuthGuard } from '@/auth/AuthGuard';
 import { AppLayout } from '@/components/AppLayout';
+import { EmptyState } from '@/components/EmptyState';
+import { AllPage } from '@/features/all/AllPage';
 import { BookmarkDetailPage } from '@/features/bookmarks/BookmarkDetailPage';
 import { BookmarksPage } from '@/features/bookmarks/BookmarksPage';
 import { CollectionDetailPage } from '@/features/collections/CollectionDetailPage';
 import { CollectionsPage } from '@/features/collections/CollectionsPage';
 import { RedeemSharePage } from '@/features/sharing/RedeemSharePage';
+
+function NotFoundPage(): JSX.Element {
+  const navigate = useNavigate();
+  return (
+    <EmptyState
+      icon={<SearchOffIcon fontSize="inherit" />}
+      title="Page not found"
+      actionLabel="Go to collections"
+      onAction={() => void navigate('/collections')}
+    />
+  );
+}
 
 // Data-mode router WITHOUT loaders: getAccessTokenSilently lives in React
 // context (useAuth0), so data fetching pairs with TanStack Query in
@@ -31,10 +45,7 @@ export const router = createBrowserRouter([
           { path: 'bookmarks/:id', element: <BookmarkDetailPage /> },
           { path: 'shared', element: <RedeemSharePage /> },
           { path: 'all', element: <AllPage /> },
-          {
-            path: '*',
-            element: <Typography variant="h5">Page not found</Typography>,
-          },
+          { path: '*', element: <NotFoundPage /> },
         ],
       },
     ],

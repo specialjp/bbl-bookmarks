@@ -65,6 +65,36 @@ export function resetStore(): void {
 export const server = setupServer(
   http.get('/api/collections', () => HttpResponse.json(page(store.collections))),
   http.get('/api/collections/shared-with-me', () => HttpResponse.json(page([]))),
+  http.get('/api/collections/:id/bookmarks', ({ params }) =>
+    HttpResponse.json(
+      page(store.bookmarks.filter((b) => b.collectionId === params.id)),
+    ),
+  ),
+  http.get('/api/collections/:id', ({ params }) => {
+    const row = store.collections.find((c) => c.id === params.id);
+    return row
+      ? HttpResponse.json(row)
+      : HttpResponse.json(
+          { statusCode: 404, message: 'Not Found' },
+          { status: 404 },
+        );
+  }),
+  http.post('/api/shares/accept', async ({ request }) => {
+    const { token } = (await request.json()) as { token: string };
+    if (token === 'tok-valid') {
+      return HttpResponse.json({
+        id: 'share-1',
+        collectionId: 'col-1',
+        granteeUserId: 'user-1',
+        createdAt: '2026-08-15T00:00:00.000Z',
+        revokedAt: null,
+      });
+    }
+    return HttpResponse.json(
+      { statusCode: 404, message: 'Not Found' },
+      { status: 404 },
+    );
+  }),
   http.get('/api/bookmarks', ({ request }) => {
     const url = new URL(request.url);
     const collectionId = url.searchParams.get('collectionId');

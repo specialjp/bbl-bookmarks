@@ -115,6 +115,7 @@ export function BookmarksPage(): JSX.Element {
                   </InputAdornment>
                 ),
               },
+              htmlInput: { 'aria-label': 'Search bookmarks' },
             }}
           />
           <TextField
@@ -144,7 +145,13 @@ export function BookmarksPage(): JSX.Element {
       ) : bookmarks.data.data.length === 0 ? (
         <EmptyState
           icon={<BookmarkBorderIcon fontSize="inherit" />}
-          title={urlQ ? 'No bookmarks match your search' : 'No bookmarks yet'}
+          title={
+            urlQ
+              ? 'No bookmarks match your search'
+              : filterValue !== ALL
+                ? 'No bookmarks in this collection'
+                : 'No bookmarks yet'
+          }
           subtitle={urlQ ? 'Try another phrase.' : 'Save your first link.'}
           actionLabel={urlQ ? undefined : 'Add a bookmark'}
           onAction={urlQ ? undefined : () => setCreating(true)}
@@ -208,6 +215,7 @@ export function BookmarksPage(): JSX.Element {
       )}
 
       <CreateBookmarkDialog
+        key={collectionParam ?? 'none'}
         open={creating}
         onClose={() => setCreating(false)}
         defaultCollectionId={collectionParam ?? undefined}
