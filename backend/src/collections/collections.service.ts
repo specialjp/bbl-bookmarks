@@ -1,10 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PaginationDto } from '../common/dto/pagination.dto';
-import {
-  Paginated,
-  paginated,
-} from '../common/interfaces/paginated.interface';
+import { Paginated, paginated } from '../common/interfaces/paginated.interface';
 import { Bookmark, Collection, Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCollectionDto } from './dto/create-collection.dto';

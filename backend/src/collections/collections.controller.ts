@@ -16,10 +16,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { Paginated } from '../common/interfaces/paginated.interface';
 import { Bookmark } from '../generated/prisma/client';
-import {
-  CollectionsService,
-  CollectionView,
-} from './collections.service';
+import { CollectionsService, CollectionView } from './collections.service';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { QueryCollectionsDto } from './dto/query-collections.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
