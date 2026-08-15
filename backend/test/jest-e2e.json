@@ -4,6 +4,21 @@
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
-  }
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "allowJs": true,
+          "module": "commonjs",
+          "esModuleInterop": true,
+          "target": "es2022"
+        }
+      }
+    ]
+  },
+  "transformIgnorePatterns": ["node_modules/(?!jose)"],
+  "globalSetup": "<rootDir>/global-setup.ts",
+  "setupFiles": ["<rootDir>/setup-env.ts"],
+  "testTimeout": 30000,
+  "maxWorkers": 1
 }
