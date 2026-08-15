@@ -77,4 +77,8 @@ Representation: `{ id, collectionId, granteeUserId, createdAt, revokedAt }` (tok
 
 ## 5. Corrections — where the agent's first attempt was wrong
 
-> 2–3 entries distilled from WORKLOG.md at the end of the build, with commit hashes.
+Distilled from [WORKLOG.md](WORKLOG.md) (which has the full list, including non-API mistakes):
+
+1. **Undocumented `?name=` accepted on the nested route.** The generated collections controller reused `QueryCollectionsDto` for `GET /collections/:id/bookmarks`, silently accepting a `?name=` param this contract never defined. **Caught by `/api-contract-check`** run before the feature commit (its drift table is pasted in [/.agent/api-contract-check.md](.agent/api-contract-check.md)); code fixed to the bare `PaginationDto` in the same commit (`62fa421`).
+2. **A planning agent designed a public `GET /shared/:token`.** That contradicts both "OIDC on every route" and the locked signed-in-only sharing decision. Caught during plan synthesis when the frontend plan was reconciled against the decisions list; the share flow was realigned to the authenticated `POST /shares/accept` before any code existed (ADR-009, WORKLOG 2026-08-15).
+3. **A planning agent dropped PUT ("PATCH not PUT")** even though the assignment explicitly requires both verbs — and, in the same output, put the backend on port 3000, which would have broken the registered Auth0 callback. Both caught by re-reading the plan against the assignment text; the contract above (PUT = full replace with omitted-optionals→null, PATCH = partial; FE owns 3000) is the corrected version (ADR-003).
