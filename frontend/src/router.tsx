@@ -4,6 +4,8 @@ import { createBrowserRouter, Navigate } from 'react-router';
 import { AuthGuard } from '@/auth/AuthGuard';
 import { CallbackPage } from '@/auth/CallbackPage';
 import { AppLayout } from '@/components/AppLayout';
+import { CollectionDetailPage } from '@/features/collections/CollectionDetailPage';
+import { CollectionsPage } from '@/features/collections/CollectionsPage';
 
 // Data-mode router WITHOUT loaders: getAccessTokenSilently lives in React
 // context (useAuth0), so data fetching pairs with TanStack Query in
@@ -19,7 +21,9 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { index: true, element: <Navigate to="/collections" replace /> },
-          // Feature pages land in the next commits.
+          { path: 'collections', element: <CollectionsPage /> },
+          { path: 'collections/:id', element: <CollectionDetailPage /> },
+          // Remaining feature pages land in the next commits.
           {
             path: '*',
             element: <Typography variant="h5">Page not found</Typography>,
