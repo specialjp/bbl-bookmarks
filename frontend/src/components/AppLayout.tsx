@@ -10,11 +10,12 @@ import { Link as RouterLink, Outlet, useLocation } from 'react-router';
 
 import { UserMenu } from '@/auth/UserMenu';
 
+// No nav entry for /shared: it exists only as the share-link landing route
+// (ADR-015) — users arrive there by opening a link, never by navigating.
 const NAV = [
   { to: '/collections', label: 'Collections' },
   { to: '/bookmarks', label: 'Bookmarks' },
   { to: '/all', label: 'All' },
-  { to: '/shared', label: 'Add shared collection' },
 ];
 
 export function AppLayout(): JSX.Element {

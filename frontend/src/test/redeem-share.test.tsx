@@ -49,12 +49,21 @@ describe('RedeemSharePage — link-based sharing (ADR-015)', () => {
     );
   });
 
-  it('invalid link (404) -> alert + manual form available as fallback', async () => {
+  it('invalid link (404) -> persistent alert with an escape to collections', async () => {
     const { router } = renderAt('/shared?token=tok-bogus');
     expect(
       await screen.findByText("This share link isn't valid"),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/shared');
-    expect(screen.getByLabelText(/share link or token/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /go to my collections/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('bare /shared without a token redirects to /collections (link-target-only route)', async () => {
+    const { router } = renderAt('/shared');
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/collections'),
+    );
   });
 });

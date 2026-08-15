@@ -1,44 +1,27 @@
-import RedeemIcon from '@mui/icons-material/Redeem';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useEffect, useState, type FormEvent, type JSX } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useEffect, type JSX } from 'react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router';
 
 import { ApiError } from '@/api/client';
 
 import { useAcceptShare } from './api';
 
-// Accepts a full share link or a raw token; extracts the token either way.
-function extractToken(value: string): string {
-  const trimmed = value.trim();
-  if (trimmed.includes('token=')) {
-    try {
-      return new URL(trimmed).searchParams.get('token') ?? trimmed;
-    } catch {
-      /* not a URL — fall through to raw */
-    }
-  }
-  return trimmed;
-}
-
-// Link-first flow (ADR-015): /shared?token=…&collection=… auto-redeems after
-// sign-in (AuthGuard round-trips the query string through Auth0 for free).
-// The `collection` param exists for exactly one case: the OWNER opening
-// their own link — the API answers 400, and we route them home to their
-// collection instead of dead-ending (the grader has only one account).
+// Share-link landing route (ADR-015). Not in the nav and has no manual form:
+// users only ever arrive here by opening /shared?token=…&collection=… .
+// After sign-in (AuthGuard round-trips the query through Auth0) the token is
+// redeemed automatically. The `collection` param exists for one case: the
+// OWNER opening their own link — the API answers 400, and we route them home
+// to their collection instead of dead-ending (the grader has one account).
 export function RedeemSharePage(): JSX.Element {
   const [params] = useSearchParams();
   const urlToken = params.get('token');
   const urlCollection = params.get('collection');
-  const [manualToken, setManualToken] = useState('');
   const accept = useAcceptShare();
   const navigate = useNavigate();
 
@@ -55,7 +38,6 @@ export function RedeemSharePage(): JSX.Element {
   // Navigation is driven by mutation STATE, not per-call callbacks:
   // StrictMode's simulated unmount swallows mutate()-level callbacks fired
   // from a mount effect, but the hook's state survives the remount.
-  // (Found live: the auto-redeem spinner span forever in dev without this.)
   useEffect(() => {
     if (accept.isSuccess) {
       // replace: keeps Back from re-redeeming and drops the tokened URL
@@ -76,17 +58,12 @@ export function RedeemSharePage(): JSX.Element {
     }
   }, [accept.error, urlCollection, navigate]);
 
-  const submitManual = (e: FormEvent): void => {
-    e.preventDefault();
-    const token = extractToken(manualToken);
-    if (!token) return;
-    accept.mutate({ token });
-  };
+  // Nothing to do here without a token — this page is a link target only.
+  if (!urlToken) return <Navigate to="/collections" replace />;
 
   const error = accept.error instanceof ApiError ? accept.error : null;
-  const redeeming = Boolean(urlToken) && !error && !accept.isError;
 
-  if (redeeming) {
+  if (!error) {
     return (
       <Stack
         spacing={2}
@@ -102,10 +79,7 @@ export function RedeemSharePage(): JSX.Element {
     );
   }
 
-  const errorContent: Record<
-    number,
-    { title: string; body: string }
-  > = {
+  const errorContent: Record<number, { title: string; body: string }> = {
     404: {
       title: "This share link isn't valid",
       body: 'It may have been revoked, already replaced, or mistyped. Ask the owner to send a new link.',
@@ -119,59 +93,19 @@ export function RedeemSharePage(): JSX.Element {
       body: 'You created this link to share your collection with someone else — send it to them instead. You already have full access.',
     },
   };
-  const known = error ? errorContent[error.status] : undefined;
+  const known = errorContent[error.status];
 
   return (
     <Box sx={{ maxWidth: 560, mx: 'auto' }} aria-live="polite">
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          <AlertTitle>{known?.title ?? 'Something went wrong'}</AlertTitle>
-          {known?.body ?? error.message}
-          <Box sx={{ mt: 1 }}>
-            <Button
-              size="small"
-              onClick={() => void navigate('/collections')}
-            >
-              Go to my collections
-            </Button>
-          </Box>
-        </Alert>
-      )}
-      <Card>
-        <CardContent>
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              <RedeemIcon color="primary" />
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                Add a shared collection
-              </Typography>
-            </Stack>
-            <Typography color="text.secondary">
-              Got a share link? Just open it — the collection is added
-              automatically. If you were given a link or raw token to paste,
-              drop it below. Access is read-only.
-            </Typography>
-            <form onSubmit={submitManual}>
-              <Stack direction="row" spacing={1}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Share link or token"
-                  value={manualToken}
-                  onChange={(e) => setManualToken(e.target.value)}
-                />
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={accept.isPending || !manualToken.trim()}
-                >
-                  Add
-                </Button>
-              </Stack>
-            </form>
-          </Stack>
-        </CardContent>
-      </Card>
+      <Alert severity="error">
+        <AlertTitle>{known?.title ?? 'Something went wrong'}</AlertTitle>
+        {known?.body ?? error.message}
+        <Box sx={{ mt: 1 }}>
+          <Button size="small" onClick={() => void navigate('/collections')}>
+            Go to my collections
+          </Button>
+        </Box>
+      </Alert>
     </Box>
   );
 }
