@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+build/
+coverage/
+
+# Environment — real secrets stay local; .env.example is committed
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS / editor noise
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# NOTE: /transcripts/ is deliberately COMMITTED (graded deliverable, redacted).
