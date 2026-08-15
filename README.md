@@ -82,6 +82,7 @@ The spec says only "A user can delete a collection" — silent about the bookmar
 | Bonus: CI/CD | ✅ GitHub Actions — lint, typecheck, unit, hermetic e2e on a Postgres service, docker builds |
 | Bonus: /all page | ✅ done (client-side composition — no invented backend contract) |
 | Bonus: full-text search | ✅ Postgres tsvector + GIN, `?q=` ranked, cross-user-leak e2e |
+| Share management UI (list/revoke issued shares) | ⏭️ backend-only — `GET /shares` + `DELETE /shares/:id` (revoke) are fully e2e-tested; the FE page was omitted for scope (mint + redeem UIs exist) |
 | Frontend E2E (Playwright) | ⏭️ skipped — component tests + manual browser verification instead (see test section) |
 | Share-token hashing at rest, rate limiting, refresh-token rotation hardening | ⏭️ skipped — documented production gaps (ADR-014) |
 | PUT on collections vs bookmarks asymmetry | ℹ️ PUT exists on both; collections' only writable field is `name`, so PUT/PATCH converge there |

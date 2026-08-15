@@ -10,4 +10,6 @@ Raw Claude Code session logs (`raw/NN-<phase>.jsonl`, redacted) plus a per-sessi
 - Anything shaped like a JWT (`eyJ…`).
 - Email addresses and `/Users/<name>` home paths.
 
-Snapshots land at milestones: `00-planning` (agent-team brainstorm), `01-backend`, `02-frontend/polish`.
+- The assignment's test password. It appears in the top-level README deliberately — it is the assignment's own credential and the grader needs it — and is redacted here anyway as a policy default.
+
+Snapshots land at milestones: `00-planning` (agent-team brainstorm), `01-backend`, `02-frontend/polish`. All three are supersets of one continuous session.

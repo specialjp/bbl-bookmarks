@@ -75,25 +75,6 @@ export function useCreateCollection(): UseMutationResult<
   });
 }
 
-export function useRenameCollection(): UseMutationResult<
-  Collection,
-  ApiError,
-  { id: string; name: string }
-> {
-  const api = useApi();
-  const qc = useQueryClient();
-  const { notify } = useSnackbar();
-  return useMutation({
-    mutationFn: ({ id, name }) =>
-      api.patch<Collection>(`/api/collections/${id}`, { name }),
-    onSuccess: (updated) => {
-      void qc.invalidateQueries({ queryKey: collectionKeys.all });
-      notify(`Collection renamed to “${updated.name}”`);
-    },
-    onError: (e) => notify(e.message, 'error'),
-  });
-}
-
 export function useDeleteCollection(): UseMutationResult<
   void,
   ApiError,

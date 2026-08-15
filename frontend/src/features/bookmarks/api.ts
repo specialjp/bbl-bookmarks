@@ -78,25 +78,6 @@ export function useCreateBookmark(): UseMutationResult<
   });
 }
 
-export function usePatchBookmark(): UseMutationResult<
-  Bookmark,
-  ApiError,
-  { id: string; changes: Partial<BookmarkInput> }
-> {
-  const api = useApi();
-  const qc = useQueryClient();
-  const { notify } = useSnackbar();
-  return useMutation({
-    mutationFn: ({ id, changes }) =>
-      api.patch<Bookmark>(`/api/bookmarks/${id}`, changes),
-    onSuccess: (updated) => {
-      void qc.invalidateQueries({ queryKey: bookmarkKeys.all });
-      notify(`Bookmark “${updated.title}” updated`);
-    },
-    onError: (e) => notify(e.message, 'error'),
-  });
-}
-
 export function useDeleteBookmark(): UseMutationResult<
   void,
   ApiError,
