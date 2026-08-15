@@ -12,7 +12,7 @@ Everything a fresh agent session needs to produce on-spec code in this repo. Rea
 ## Hard constraints — do not violate, do not "improve"
 
 1. **OIDC on every route.** Global JWT guard; there is NO `@Public()` decorator and none may be added. No `/health` endpoint (ADR-012).
-2. **Privacy invariant:** every Collection/Bookmark query is scoped by the internal `userId` resolved from the verified JWT `sub`. Cross-user or nonexistent resource → **404, never 403** (ADR-007). No DTO accepts `ownerId` from the client.
+2. **Privacy invariant — the central graded property.** The spec (§3): *"Everything in this app is private to the person who created it. … If user A can see, edit, or even __learn of the existence of__ user B's data, the app is broken."* Every Collection/Bookmark query is scoped by the internal `userId` resolved from the verified JWT `sub`. Cross-user or nonexistent resource → **404, never 403**, with indistinguishable bodies (ADR-007). No DTO accepts `ownerId` from the client. Sharing (ADR-009) is the single owner-initiated, consent-based exception.
 3. **Sharing is signed-in + read-only** (ADR-009): grantees can GET a shared collection and its bookmarks; write paths are owner-scoped queries so grantee writes 404 structurally.
 4. **Error envelope** = NestJS default `{ statusCode, message, error }` (ADR-002). Don't wrap it.
 5. **PUT = full replace** (omitted optionals become null), **PATCH = partial** (ADR-003). Both exist on both resources.

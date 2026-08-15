@@ -67,6 +67,8 @@ Representation: `{ id, collectionId, granteeUserId, createdAt, revokedAt }` (tok
 
 ## 4. Privacy invariant — how it is enforced in code
 
+> Spec §3: *"Everything in this app is private to the person who created it. There is no public content, no shared feed, no 'browse other users.' If user A can see, edit, or even __learn of the existence of__ user B's data, the app is broken."* Sharing (§3.3, ADR-009) is the single owner-initiated exception — read-only, consent-based, revocable.
+
 - The global `JwtAuthGuard` (APP_GUARD, `backend/src/auth/auth.module.ts`) resolves the verified JWT `sub` to an **internal** `userId` (`backend/src/users/users.service.ts`); controllers receive it via `@CurrentUser()`. No route escapes the guard — there is no `@Public()` decorator in the codebase (ADR-012).
 - Every service query is scoped: reads use `where: { id, OR: [{ ownerId: userId }, { shares: { some: { granteeUserId: userId, revokedAt: null } } }] }` (collections) or `where: { id, ownerId: userId }`; **writes always use `{ id, ownerId: userId }`** — a grantee's write finds no row, so read-only sharing is structural, not a role check.
 - One failure path: scoped `findFirst` → `null` → `NotFoundException`. Cross-user and nonexistent are **indistinguishable 404s** (ADR-007) by construction.

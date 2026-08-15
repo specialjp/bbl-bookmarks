@@ -12,4 +12,22 @@
 
 ## Evidence of use
 
-> One real invocation output is pasted here during the build.
+Run before the collections feature commit (2026-08-15):
+
+```
+route                              | documented                       | implemented                        | DRIFT?
+GET  /me                           | 200 local row                    | 200 local row                      | ok
+GET  /collections                  | ?name= contains-ci, paginated    | matches                            | ok
+GET  /collections/shared-with-me   | before /:id, paginated           | declared first, paginated          | ok
+POST /collections                  | 201 {name}                       | 201, DTO {name} only               | ok
+GET  /collections/:id              | owner OR grantee, else 404       | readableWhere -> findFirst -> 404  | ok
+PUT  /collections/:id              | full replace, owner only         | CreateCollectionDto, updateMany    | ok
+PATCH /collections/:id             | partial, owner only              | PartialType, updateMany            | ok
+DELETE /collections/:id            | 204, owner only, SetNull         | @HttpCode(204), deleteMany scoped  | ok
+GET  /collections/:id/bookmarks    | pagination params ONLY           | accepted ?name= (QueryCollections  | DRIFT — code wrong:
+                                   |                                  | Dto reused), silently ignored      | undocumented param accepted
+POST /collections/:id/shares       | 201 mint                         | not yet implemented (commit 15)    | pending, on plan
+/bookmarks*, /shares*              | documented                       | not yet implemented (13–15)        | pending, on plan
+```
+
+Resolution: code fixed (nested route now takes the bare `PaginationDto`), logged in WORKLOG; contract unchanged.
