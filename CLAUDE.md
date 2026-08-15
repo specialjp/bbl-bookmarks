@@ -27,6 +27,8 @@ Everything a fresh agent session needs to produce on-spec code in this repo. Rea
 ```bash
 # DB
 docker compose up -d db
+# Full dev stack in Docker (hot reload): docker compose up
+# Production stack: docker compose -f docker-compose.prod.yml up --build  (ADR-016)
 # Backend
 cd backend && npm run start:dev            # port 3001
 cd backend && npx prisma migrate dev && npx prisma db seed

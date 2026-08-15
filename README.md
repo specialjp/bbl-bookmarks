@@ -29,12 +29,31 @@ npm ci
 npm run dev                  # http://localhost:3000  (strictPort — the Auth0 callback is registered here)
 ```
 
-Or the all-Docker path:
+Or all-Docker **dev** (hot reload, source bind-mounted — no build step):
 
 ```bash
-docker compose up --build    # db + self-migrating API + nginx-served SPA on :3000
-docker compose exec backend npx prisma db seed
+docker compose up            # db + backend (nest --watch) on :3001 + Vite dev server on :3000
 ```
+
+First start is slow (`npm install` inside the containers); restarts are fast. If file
+watching doesn't fire through the bind mount, add `CHOKIDAR_USEPOLLING=true` to the
+service environment.
+
+> ⚠️ macOS: if the repo lives under `~/Desktop`, `~/Documents`, or `~/Downloads`, the
+> bind mounts fail with `EPERM: operation not permitted` until you grant your Docker
+> provider (Docker Desktop / OrbStack) **Files and Folders** access to that folder in
+> System Settings → Privacy & Security. Image builds are unaffected — only the dev
+> stack's bind mounts hit this.
+
+Or the **production** stack (built images, self-migrating API, nginx-served SPA):
+
+```bash
+docker compose -f docker-compose.prod.yml up --build    # SPA on :3000, API on :3001
+docker compose -f docker-compose.prod.yml exec backend npx prisma db seed
+```
+
+Dev and prod use separate compose project names, so they never share containers or
+the database volume (ADR-016).
 
 **Log in as the assignment's test user:** `candidate@test.com` / `@password1234`
 (⚠️ the leading `@` is part of the password — `password1234` fails silently; verified against the live tenant.)

@@ -1,3 +1,9 @@
+# DEV stack — hot reload, source bind-mounted, stock node images (no build).
+# `docker compose up -d db` for the local-npm loop, `docker compose up` for
+# everything-in-Docker dev. Production stack lives in docker-compose.prod.yml
+# (run with -f); it uses a separate project name so the two never share
+# containers or the database volume (ADR-016).
+
 services:
   db:
     image: postgres:16
@@ -6,36 +12,69 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: bookmarks
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d bookmarks']
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bookmarks"]
       interval: 5s
       timeout: 3s
       retries: 10
 
   backend:
-    build: ./backend
+    # node:22-slim (Debian): Prisma engines are a known flake source on
+    # Alpine/musl — same reasoning as backend/Dockerfile.
+    image: node:22-slim
+    working_dir: /app
+    # npm install (not ci): no-ops when node_modules is current, so restarts
+    # are fast. migrate deploy (not dev): non-interactive; create NEW
+    # migrations from the host.
+    command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npm run start:dev"
     environment:
+      # Set here (not via the bind-mounted .env, whose DATABASE_URL points at
+      # localhost) — process env wins over dotenv, so this overrides cleanly.
       DATABASE_URL: postgresql://postgres:postgres@db:5432/bookmarks?schema=public
       AUTH0_ISSUER: https://dev-yg.us.auth0.com/
       AUTH0_AUDIENCE: https://bbl-candidate-test-api
       AUTH0_JWKS_URI: https://dev-yg.us.auth0.com/.well-known/jwks.json
       PORT: 3001
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+      # Overlay: container prisma generate emits linux engines; without this
+      # they'd overwrite the host's darwin client through the bind mount and
+      # break the local-npm dev loop.
+      - backend_prisma_client:/app/src/generated
     ports:
-      - '3001:3001'
+      - "3001:3001"
     depends_on:
       db:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      # PUBLIC SPA values by design (see frontend/.env.example) — set here so
+      # a fresh clone's `docker compose up` works before anyone copies .env.
+      VITE_AUTH0_DOMAIN: dev-yg.us.auth0.com
+      VITE_AUTH0_CLIENT_ID: H9F6QG5SzTKMv0tbmgxLj9LjG1EKVllA
+      VITE_AUTH0_AUDIENCE: https://bbl-candidate-test-api
+      VITE_API_BASE_URL: ""
+      # Vite proxy target inside the compose network (vite.config.ts reads it).
+      VITE_API_TARGET: http://backend:3001
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
     # Port 3000 is load-bearing: the Auth0 callback URL is registered for it.
     ports:
-      - '3000:80'
+      - "3000:3000"
     depends_on:
       - backend
 
 volumes:
   pgdata:
+  backend_node_modules:
+  backend_prisma_client:
+  frontend_node_modules:

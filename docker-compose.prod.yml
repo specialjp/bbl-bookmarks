@@ -1,0 +1,50 @@
+# PRODUCTION stack — built images, self-migrating API, nginx-served SPA.
+# Run: docker compose -f docker-compose.prod.yml up --build
+# Distinct project name: prod never shares containers or the database volume
+# with the dev stack in docker-compose.yml (ADR-016).
+name: bbl-prod
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bookmarks
+    # No published port: the prod DB is reachable only from the compose
+    # network (dev exposes 5432 for host tooling; prod doesn't need it).
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bookmarks"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/bookmarks?schema=public
+      AUTH0_ISSUER: https://dev-yg.us.auth0.com/
+      AUTH0_AUDIENCE: https://bbl-candidate-test-api
+      AUTH0_JWKS_URI: https://dev-yg.us.auth0.com/.well-known/jwks.json
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    # Port 3000 is load-bearing: the Auth0 callback URL is registered for it.
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
